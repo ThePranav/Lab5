@@ -55,15 +55,22 @@ public class MorseDecoder {
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
+            double sumSample = 0;
+            inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            for (double element : sampleBuffer) {
+                sumSample += Math.abs(element);
+            }
+            System.out.println(sumSample);
+            returnBuffer[binIndex] = sumSample;
         }
         return returnBuffer;
     }
 
     /** Power threshold for power or no power. You may need to modify this value. */
-    private static final double POWER_THRESHOLD = 10;
+    private static final double POWER_THRESHOLD = 2;
 
     /** Bin threshold for dots or dashes. Related to BIN_SIZE. You may need to modify this value. */
-    private static final int DASH_BIN_COUNT = 8;
+    private static final int DASH_BIN_COUNT = 12;
 
     /**
      * Convert power measurements to dots, dashes, and spaces.
@@ -77,7 +84,28 @@ public class MorseDecoder {
      * @return the Morse code string of dots, dashes, and spaces
      */
     private static String powerToDotDash(final double[] powerMeasurements) {
-        return "";
+        String result = "";
+        int toneCount = 0;
+        int silenceCount = 0;
+        final int spaceBinCount = 8;
+        for (double element : powerMeasurements) {
+            if (element < POWER_THRESHOLD) {
+                if (toneCount < DASH_BIN_COUNT && toneCount != 0) {
+                    result += ".";
+                } else if (toneCount >= DASH_BIN_COUNT) {
+                    result += "-";
+                }
+                toneCount = 0;
+                silenceCount++;
+            } else {
+                if (silenceCount > spaceBinCount) {
+                    result += " ";
+                }
+                toneCount++;
+                silenceCount = 0;
+            }
+        }
+        return result;
     }
 
     /**
